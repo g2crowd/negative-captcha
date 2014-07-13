@@ -19,4 +19,5 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'actionpack'
   s.add_dependency 'activesupport'
+  s.add_dependency 'i18n'
 end

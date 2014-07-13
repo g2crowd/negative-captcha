@@ -1,0 +1,8 @@
+en:
+  negative_captcha:
+    errors:
+      no_params_provided: 'No params provided'
+      automated_script_retry: "Please try again.\nThis usually happens because an automated script attempted to submit this form."
+      invalid_timestamp: 'Error: invalid timestamp.  %{message}'
+      invalid_spinner: 'Error: invalid spinner.  %{message}'
+      invalid_fields: 'Error: Hidden form fields were submitted that should not have been. %{message}'

@@ -30,11 +30,7 @@ class NegativeCaptcha
       ([timestamp, secret] + Array(opts[:spinner])).join('-')
     )
 
-    self.message = opts[:message] || <<-MESSAGE
-Please try again.
-This usually happens because an automated script attempted to submit this form.
-    MESSAGE
-
+    self.message = opts[:message] || t('errors.automated_script_retry')
     self.fields = opts[:fields].inject({}) do |hash, field_name|
       hash[field_name] = @@test_mode ? "test-#{field_name}" : Digest::MD5.hexdigest(
         [field_name, spinner, secret].join('-')
@@ -44,7 +40,7 @@ This usually happens because an automated script attempted to submit this form.
     end
 
     self.values = HashWithIndifferentAccess.new
-    self.error = "No params provided"
+    self.error = t('errors.no_params_provided')
 
     if opts[:params] && (opts[:params][:spinner] || opts[:params][:timestamp])
       process(opts[:params])
@@ -63,13 +59,11 @@ This usually happens because an automated script attempted to submit this form.
     timestamp_age = (Time.now.to_i - params[:timestamp].to_i).abs
 
     if params[:timestamp].nil? || timestamp_age > 86400
-      self.error = "Error: Invalid timestamp.  #{message}"
+      self.error = t('errors.invalid_timestamp', message: message)
     elsif params[:spinner] != spinner
-      self.error = "Error: Invalid spinner.  #{message}"
+      self.error = t('errors.invalid_spinner', message: message)
     elsif fields.keys.detect {|name| params[name] && params[name] =~ /\S/}
-      self.error = <<-ERROR
-Error: Hidden form fields were submitted that should not have been. #{message}
-      ERROR
+      self.error = t('errors.invalid_fields', message: message)
 
       false
     else
@@ -80,11 +74,20 @@ Error: Hidden form fields were submitted that should not have been. #{message}
       end
     end
   end
+
+  private
+
+  def t(key, *rest)
+    I18n.t "negative_captcha.#{key}", *rest
+  end
 end
 
 
 require 'negative_captcha/view_helpers'
 require "negative_captcha/form_builder"
+require 'i18n'
+
+I18n.load_path += Dir.glob(File.dirname(__FILE__) + "negative_captcha/locales/*.{yml}")
 
 class ActionView::Base
   include NegativeCaptchaHelpers
