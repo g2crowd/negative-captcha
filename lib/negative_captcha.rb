@@ -35,14 +35,7 @@ Please try again.
 This usually happens because an automated script attempted to submit this form.
     MESSAGE
 
-    self.fields = opts[:fields].inject({}) do |hash, field_name|
-      hash[field_name] = @@test_mode ? "test-#{field_name}" : Digest::MD5.hexdigest(
-        [field_name, spinner, secret].join('-')
-      )
-
-      hash
-    end
-
+    self.fields = build_fields opts[:fields]
     self.values = HashWithIndifferentAccess.new
     self.error = "No params provided"
 
@@ -66,7 +59,7 @@ This usually happens because an automated script attempted to submit this form.
       self.error = "Error: Invalid timestamp.  #{message}"
     elsif params[:spinner] != spinner
       self.error = "Error: Invalid spinner.  #{message}"
-    elsif fields.keys.detect {|name| params[name] && params[name] =~ /\S/}
+    elsif invalid_fields_submitted(fields, params)
       self.error = <<-ERROR
 Error: Hidden form fields were submitted that should not have been. #{message}
       ERROR
@@ -75,16 +68,89 @@ Error: Hidden form fields were submitted that should not have been. #{message}
     else
       self.error = ""
 
-      fields.each do |name, encrypted_name|
-        self.values[name] = params[encrypted_name] if params.include? encrypted_name
+      self.values = build_values(fields, params)
+    end
+  end
+
+  def key_for_field(field_name)
+    traverse_query_field_name field_name, fields
+  end
+
+  def value_for_field(field_name)
+    traverse_query_field_name field_name, values
+  end
+
+  def traverse_query_field_name(name, hash)
+    path = []
+
+    name.split(/(\[|\]\[|\])/).each_with_index do |i, idx|
+      path << i if idx.even?
+    end
+
+    traverser = hash
+    path.each do |node|
+      traverser = traverser[node.to_sym] if traverser.respond_to?(:[])
+    end
+
+    traverser
+  end
+
+  def recursive_each(*hashes, &block)
+    hashes.first.each do |key, value|
+      yield *hashes.map { |i| [key, i[key]] }.flatten.concat(hashes)
+
+      if value.respond_to?(:each)
+        recursive_each *hashes.map { |i| i[key] || {} }, &block
       end
     end
+  end
+
+  def invalid_fields_submitted(fields, params)
+    invalid_fields = false
+
+    recursive_each fields, params do |_, _, _, p_val|
+      invalid_fields = true if p_val.is_a?(String) && p_val =~ /\S/
+    end
+
+    invalid_fields
+  end
+
+  def build_values(fields, params, values = HashWithIndifferentAccess.new)
+    fields.each do |key, encrypted_key|
+      if encrypted_key.respond_to?(:each)
+        values[key] = HashWithIndifferentAccess.new
+        build_values encrypted_key, (params[key] || {}), values[key]
+      else
+        values[key] = params[encrypted_key] if params.has_key? encrypted_key
+      end
+    end
+
+    values
+  end
+
+  def build_fields(fields, hash = {})
+    fields.each do |item|
+      if item.respond_to?(:each)
+        item.each do |key, children|
+          hash[key] = {}
+          build_fields children, hash[key]
+        end
+      else
+        hash[item] = build_field item
+      end
+    end
+
+    hash
+  end
+
+  def build_field(name)
+    @@test_mode ?  "test-#{name}" : Digest::MD5.hexdigest([name, spinner, secret].join('-'))
   end
 end
 
 
 require 'negative_captcha/view_helpers'
-require "negative_captcha/form_builder"
+require 'negative_captcha/form_builder'
 
 class ActionView::Base
   include NegativeCaptchaHelpers
