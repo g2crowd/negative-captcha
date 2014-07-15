@@ -10,8 +10,8 @@ module ActionView
 
       def negative_text_field_tag(negative_captcha, field, options={})
         text_field_tag(
-          negative_captcha.fields[field],
-          negative_captcha.values[field],
+          negative_captcha.key_for_field(field),
+          negative_captcha.value_for_field(field),
           options
         ) +
           content_tag('div', :style => 'position: absolute; left: -2000px;') do
@@ -21,8 +21,8 @@ module ActionView
 
       def negative_text_area_tag(negative_captcha, field, options={})
         text_area_tag(
-          negative_captcha.fields[field],
-          negative_captcha.values[field],
+          negative_captcha.key_for_field(field),
+          negative_captcha.value_for_field(field),
           options
         ) +
           content_tag('div', :style => 'position: absolute; left: -2000px;') do
@@ -32,8 +32,8 @@ module ActionView
 
       def negative_hidden_field_tag(negative_captcha, field, options={})
         hidden_field_tag(
-          negative_captcha.fields[field],
-          negative_captcha.values[field],
+          negative_captcha.key_for_field(field),
+          negative_captcha.value_for_field(field),
           options
         ) +
         content_tag('div', :style => 'position: absolute; left: -2000px;') do
@@ -43,8 +43,8 @@ module ActionView
 
       def negative_file_field_tag(negative_captcha, field, options={})
         file_field_tag(
-          negative_captcha.fields[field],
-          options.merge(:value => negative_captcha.values[field])
+          negative_captcha.key_for_field(field),
+          options.merge(:value => negative_captcha.value_for_field(field)),
         ) +
         content_tag('div', :style => 'position: absolute; left: -2000px;') do
           file_field_tag(field, :tabindex => '999')
@@ -53,8 +53,8 @@ module ActionView
 
       def negative_check_box_tag(negative_captcha, field, options={})
         check_box_tag(
-          negative_captcha.fields[field],
-          negative_captcha.values[field],
+          negative_captcha.key_for_field(field),
+          negative_captcha.value_for_field(field),
           options
         ) +
         content_tag('div', :style => 'position: absolute; left: -2000px;') do
@@ -64,8 +64,8 @@ module ActionView
 
       def negative_password_field_tag(negative_captcha, field, options={})
         password_field_tag(
-          negative_captcha.fields[field],
-          negative_captcha.values[field],
+          negative_captcha.key_for_field(field),
+          negative_captcha.value_for_field(field),
           options
         ) +
         content_tag('div', :style => 'position: absolute; left: -2000px;') do
@@ -74,7 +74,7 @@ module ActionView
       end
 
       def negative_label_tag(negative_captcha, field, name, options={})
-        label_tag(negative_captcha.fields[field], name, options)
+        label_tag(negative_captcha.key_for_field(field), name, options)
       end
     end
 
